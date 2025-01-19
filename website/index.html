@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCF Movie Recommender</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Trip Sans';
+            src: url(fonts/trip-sans-ultra.otf);
+        }
+
+        :root {
+            --bg-color: #FFFBE9;
+            --text-color: #AD8B73;
+            --primary-color: #CEAB93;
+            --secondary-color: #E3CAA5;
+            --accent-color: #AD8B73;
+            --card-bg: #FFFFFF;
+            --border-color: #E3CAA5;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Trip Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .modal {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.4s;
+            z-index: 10000;
+        }
+
+        .modal-container {
+            display: flex;
+            max-width: 720px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            max-width: 1500px;
+            height: auto;
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            transition-duration: 0.3s;
+            background: #fff;
+            transform: translateY(100px) scale(0.4);
+        }
+
+        .modal-title {
+            font-size: 26px;
+            margin: 0;
+            font-weight: 400;
+            color: #55311c;
+        }
+
+        .modal-desc {
+            letter-spacing: 1.3px;
+            padding-top: 10%;
+            font-size: 18px;
+            margin: 6px 0 30px 0;
+        }
+
+        .modal-left {
+            padding: 60px 30px 20px;
+            background: #fff;
+            flex: 1.5;
+            transition-duration: 0.5s;
+            transform: translateY(80px);
+            opacity: 0;
+        }
+
+        .modal-right {
+            flex: 2;
+            font-size: 0;
+            transition: 0.3s;
+            overflow: hidden;
+        }
+
+        .modal-right img {
+            width: 100%;
+            height: 100%;
+            transform: scale(2);
+            object-fit: cover;
+            transition-duration: 1.2s;
+        }
+
+        .modal.is-open {
+            height: 100%;
+            background: rgba(51, 51, 51, 0.85);
+        }
+
+        .modal-button {
+            font-family: 'Trip Sans', sans-serif;
+            color: #ac8570;
+            font-size: 18px;
+            cursor: pointer;
+            border: 0;
+            outline: 0;
+            padding: 10px 40px;
+            border-radius: 30px;
+            background: rgb(255, 246, 218);
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.26);
+            transition: 0.3s;
+        }
+
+        .modal-button:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        .modal.is-open .modal-button {
+            opacity: 0;
+        }
+
+        .modal.is-open .modal-container {
+            opacity: 1;
+            transition-duration: 0.6s;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .modal.is-open .modal-right img {
+            transform: scale(1);
+        }
+
+        .modal.is-open .modal-left {
+            transform: translateY(0);
+            opacity: 1;
+            transition-delay: 0.1s;
+        }
+
+        #title {
+            border: 2px solid var(--secondary-color);
+            box-shadow: 0 8px 16px var(--shadow-color);
+            padding: 1rem 7rem;
+            background-color: var(--card-bg);
+            border-radius: 30rem;
+            font-size: 400%;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 2rem;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            box-shadow: 0 8px 16px var(--shadow-color);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease-out;
+            animation: fadeIn 1s ease-out;
+        }
+
+        #searchContainer {
+            position: relative;
+            width: 100%;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-self: center;
+            align-items: center;
+        }
+
+        #movieSearch {
+            margin: 1.5rem 0 1rem 0;
+            width: 100%;
+            max-width: 800px;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 50px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px var(--shadow-color);
+        }
+
+        #movieSearch:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(206, 171, 147, 0.4);
+            transform: scale(1.02);
+        }
+
+        #searchResults {
+            overflow-x: hidden;
+            width: 90%;
+            list-style-type: none;
+            padding: 0;
+            margin: 1rem 0;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        #searchResults li {
+            margin-top: 0.1rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        #searchResults li:last-child {
+            border-bottom: none;
+        }
+
+        #searchResults li:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+
+        .star-rating {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            transition: transform 0.2s ease;
+        }
+
+        .star-rating .star {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .star-rating .star:hover {
+            transform: scale(1.2);
+        }
+
+        .ratedMovie {
+            background-color: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px var(--shadow-color);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            animation: fadeInLeft 0.5s ease-out;
+        }
+
+        .ratedMovie:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.01);
+        }
+
+        .remove-rating {
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-rating:hover {
+            transform: scale(1.2);
+        }
+
+        #getRecommendations {
+            display: block;
+            width: 100%;
+            max-width: 800px;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 2rem auto 1rem;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        #getRecommendations:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        #recommendationsList {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        #recommendationsList li {
+            background-color: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px var(--shadow-color);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            animation: fadeInRight 0.5s ease-out;
+        }
+
+        #recommendationsList li:hover {
+            transform: scale(1.01);
+            background-color: var(--secondary-color);
+        }
+
+        .movie-title {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .formatted-genres {
+            color: var(--accent-color);
+            font-weight: 400;
+        }
+
+        #diverseToggle {
+            padding: 0.3rem 1rem;
+            border-radius: 5rem;
+            background-color: var(--border-color);
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #diverseToggle:hover {
+            transform: scale(1.05);
+        }
+
+        #diverseToggle input {
+            margin-right: 0.5rem;
+        }
+
+        .divider {
+            border-bottom: 1px solid var(--border-color);
+            margin: 2rem 0;
+            width: 100%;
+            animation: expandWidth 0.5s ease-out;
+        }
+
+        .loading-spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite, fadeIn 0.3s ease-out;
+            margin: 1rem auto;
+        }
+
+        .loading-text {
+            display: none;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: var(--primary-color);
+            animation: pulse 1.5s infinite, fadeIn 0.3s ease-out;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes expandWidth {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal Structure -->
+    <div class="modal">
+        <div class="modal-container">
+            <div class="modal-left">
+                <h1 class="modal-title">About This Website</h1>
+                <p class="modal-desc">
+                    Hi, Thanks for clicking on this website. My name is Baqer. I am an aspiring Data Scientist. 
+                    What you're looking at is a NCF (Neural Collaborative Filtering) model.
+                    <br>
+                    <br>
+                    Everybody is always giving these AI models names, so its only fitting if I name him.
+                    His name is Carlos. The image on the right is a flowchart I whipped up to show you how Carlos thinks. 
+                    It shows what happens under the hood every time you ask Carlos for a movie recommendation.
+                    <br>
+                    <br>
+                    Carlos takes in user and movie information, processes it through various layers, 
+                    and spits out a prediction of how much you might enjoy a particular movie. It's designed 
+                    to learn from user interactions and improve its recommendations over time.
+                    <br>
+                    <br>
+                    While the flowchart might look complex, it's essentially Carlos's way of thinking through 
+                    each recommendation. If you're curious about the technical details, feel free to ask!
+                    <br>
+                    <br>
+                    This project reflects my passion for combining data science with practical applications. 
+                    I hope you enjoy exploring Carlos and his recommendations as much as I enjoyed building it.
+                </p>
+            </div>
+            <div class="modal-right">
+                <img src="images/flowchart.jpg" alt="About Us">
+            </div>
+        </div>
+        <button class="modal-button">Learn More About This Model</button>
+    </div>
+    <h1 id="title">NCF Movie Recommender</h1>
+    <div class="container">
+        <div id="searchContainer">
+            <input type="text" id="movieSearch" placeholder="Search for a movie...">
+            <ul id="searchResults"></ul>
+        </div>
+        <div id="ratedMovies">
+            <h2>Your Rated Movies</h2>
+        </div>
+        <div>
+            <div id="diverseToggle">
+                <input type="checkbox" id="diverseCheck">
+                <label for="diverseCheck">Get diverse recommendations</label>
+            </div>
+            <button id="getRecommendations">Get Recommendations</button>
+        </div>
+        <!-- Loading Spinner and Text -->
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        <p class="loading-text" id="loadingText">Generating Predictions...</p>
+        <ul id="recommendationsList"></ul>
+    </div>
+
+    <script>
+        const body = document.querySelector("body");
+        const modal = document.querySelector(".modal");
+        const modalContainer = document.querySelector(".modal-container");
+        const modalButton = document.querySelector(".modal-button");
+        const closeButton = document.querySelector(".close-button");
+        let isOpened = false;
+
+        // Open modal function
+        const openModal = () => {
+            modal.classList.add("is-open");
+            body.style.overflow = "hidden";
+            isOpened = true;
+        };
+
+        // Close modal function
+        const closeModal = () => {
+            modal.classList.remove("is-open");
+            body.style.overflow = "initial";
+            isOpened = false;
+        };
+
+        // Event listener for opening modal
+        modalButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            openModal();
+        });
+
+        // Event listener for closing modal when clicking outside
+        document.addEventListener("click", (event) => {
+            if (isOpened && !modalContainer.contains(event.target) && !modalButton.contains(event.target)) {
+                closeModal();
+            }
+        });
+
+        // Prevent clicks inside the modal from closing it
+        modalContainer.addEventListener("click", (event) => {
+            event.stopPropagation();
+        });
+
+        // Close modal on ESC key press
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && isOpened) {
+                closeModal();
+            }
+        });
+
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+
+        const movieSearch = document.getElementById('movieSearch');
+        const searchResults = document.getElementById('searchResults');
+        const ratedMovies = document.getElementById('ratedMovies');
+        const getRecommendationsBtn = document.getElementById('getRecommendations');
+        const recommendationsList = document.getElementById('recommendationsList');
+        const diverseCheck = document.getElementById('diverseCheck');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const loadingText = document.getElementById('loadingText');
+
+        let userRatings = [];
+
+        // Debounced search handler
+        movieSearch.addEventListener('input', debounce(searchMovies, 300));
+
+        // Search for movies
+        async function searchMovies() {
+            const query = movieSearch.value.trim();
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
+                const movies = await response.json();
+                displaySearchResults(movies);
+            } catch (error) {
+                console.error('Error searching movies:', error);
+            }
+        }
+
+        // Display search results with animation
+        function displaySearchResults(movies) {
+            searchResults.innerHTML = '';
+            movies.forEach((movie, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="movie-title">${formatTitle(movie.title)}</span>
+                    <div class="star-rating" data-movie-id="${movie.movieId}">
+                        ${createStarRating()}
+                    </div>
+                `;
+                li.style.animation = `fadeInUp 0.3s ease-out ${index * 0.1}s both`;
+                searchResults.appendChild(li);
+            });
+            addStarRatingListeners();
+        }
+
+        // Format movie title
+        function formatTitle(title) {
+            return title.replace(/^(.*?),\s*The\s*(\(\d{4}\))?$/, "The $1 $2").trim();
+        }
+
+        // Create star rating HTML
+        function createStarRating() {
+            return Array(5).fill().map((_, i) => `<span class="star" data-rating="${i + 1}">☆</span>`).join('');
+        }
+
+        // Add listeners to star ratings with animation
+        function addStarRatingListeners() {
+            document.querySelectorAll('.star-rating').forEach(ratingContainer => {
+                const movieId = ratingContainer.dataset.movieId;
+                const stars = ratingContainer.querySelectorAll('.star');
+                
+                stars.forEach(star => {
+                    star.addEventListener('mouseover', () => {
+                        const rating = star.dataset.rating;
+                        highlightStars(stars, rating);
+                    });
+                    
+                    star.addEventListener('mouseout', () => {
+                        const currentRating = userRatings.find(r => r.movieId == movieId)?.rating || 0;
+                        highlightStars(stars, currentRating);
+                    });
+                    
+                    star.addEventListener('click', () => {
+                        const rating = star.dataset.rating;
+                        rateMovie(movieId, parseInt(rating));
+                        star.style.animation = 'pulse 0.3s ease-out';
+                    });
+                });
+            });
+        }
+
+        // Highlight stars based on rating with animation
+        function highlightStars(stars, rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.textContent = '★';
+                    star.classList.add('active');
+                    star.style.animation = 'fadeIn 0.2s ease-out';
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('active');
+                    star.style.animation = 'fadeIn 0.2s ease-out';
+                }
+            });
+        }
+
+        // Rate a movie and display rated movies with animation
+        function rateMovie(movieId, rating) {
+            const existingRatingIndex = userRatings.findIndex(r => r.movieId == movieId);
+            const movie = searchResults.querySelector(`[data-movie-id="${movieId}"]`).closest('li').querySelector('.movie-title').textContent;
+
+            if (existingRatingIndex !== -1) {
+                userRatings[existingRatingIndex].rating = rating;
+            } else {
+                userRatings.push({ movieId, title: movie, rating });
+            }
+
+            displayRatedMovies();
+            movieSearch.value = '';
+            searchResults.innerHTML = '';
+        }
+
+        // Display rated movies with animation
+        function displayRatedMovies() {
+            const ratedMoviesContent = document.createElement('div');
+            ratedMoviesContent.innerHTML = '<h2>Your Rated Movies</h2>';
+            userRatings.forEach((movie, index) => {
+                const movieElement = document.createElement('div');
+                movieElement.className = 'ratedMovie';
+                movieElement.innerHTML = `
+                    <span class="movie-title">${movie.title}</span>
+                    <div>
+                        <span class="star-rating">${'★'.repeat(movie.rating)}${'☆'.repeat(5 - movie.rating)}</span>
+                        <span class="remove-rating" data-movie-id="${movie.movieId}">✖</span>
+                    </div>
+                `;
+                movieElement.style.animation = `fadeInLeft 0.5s ease-out ${index * 0.1}s both`;
+                ratedMoviesContent.appendChild(movieElement);
+            });
+            ratedMovies.innerHTML = '';
+            ratedMovies.appendChild(ratedMoviesContent);
+            addRemoveRatingListeners();
+        }
+
+        // Add listeners to remove rated movies with animation
+        function addRemoveRatingListeners() {
+            document.querySelectorAll('.remove-rating').forEach(removeBtn => {
+                removeBtn.addEventListener('click', () => {
+                    const movieId = removeBtn.dataset.movieId;
+                    const movieElement = removeBtn.closest('.ratedMovie');
+                    movieElement.style.animation = 'fadeOutLeft 0.5s ease-out';
+                    movieElement.addEventListener('animationend', () => {
+                        userRatings = userRatings.filter(r => r.movieId != movieId);
+                        displayRatedMovies();
+                    });
+                });
+            });
+        }
+
+        // Get movie recommendations
+        getRecommendationsBtn.addEventListener('click', getRecommendations);
+
+        async function getRecommendations() {
+            if (userRatings.length === 0) {
+                alert("Please rate some movies before getting recommendations.");
+                return;
+            }
+            if (userRatings.length < 5) {
+                alert("Please rate at least 5 movies before getting recommendations.");
+                return;
+            }
+
+            // Show loading spinner and text
+            loadingSpinner.style.display = 'block';
+            loadingText.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        ratings: userRatings,
+                        diverse: diverseCheck.checked
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('Error from server:', data.error);
+                    console.error('Traceback:', data.traceback);
+                    alert(`Error getting recommendations: ${data.error}`);
+                    return;
+                }
+
+                displayRecommendations(data.recommendations);
+            } catch (error) {
+                console.error('Error getting recommendations:', error);
+                alert(`Error getting recommendations: ${error.message}`);
+            } finally {
+                // Hide loading spinner and text after generation
+                loadingSpinner.style.display = 'none';
+                loadingText.style.display = 'none';
+            }
+        }
+
+        // Display recommendations with animation
+        function displayRecommendations(recommendations) {
+            recommendationsList.innerHTML = '';
+            if (!recommendations || recommendations.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No recommendations available.';
+                li.style.animation = 'fadeIn 0.5s ease-out';
+                recommendationsList.appendChild(li);
+                return;
+            }
+            recommendations.forEach((movie, index) => {
+                const li = document.createElement('li');
+                const formattedGenres = movie.genres.replace(/\|/g, ", ")
+                li.innerHTML = `
+                    <span class="movie-title">${movie.title}</span>
+                    <br>
+                    <span class="formatted-genres">Genres: ${formattedGenres}</span>
+                `;
+                li.style.animation = `fadeInRight 0.5s ease-out ${index * 0.1}s both`;
+                recommendationsList.appendChild(li);
+            });
+        }
+
+        // Utility function: Debounce
+        function debounce(func, delay) {
+            let timeoutId;
+            return function (...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Add new keyframe animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOutLeft {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(-20px);
+                }
+            }
+
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
